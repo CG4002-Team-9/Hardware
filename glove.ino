@@ -86,7 +86,8 @@ void loop() {
       Serial.print(az); Serial.print(" | ");
       Serial.print("Gyro: ");
       Serial.print(gx); Serial.print(", ");
-      Serial.print(gy); Serial.println(gz);
+      Serial.print(gy); Serial.print(", ");
+      Serial.println(gz);
       motionDetected = false;
     }
   }
