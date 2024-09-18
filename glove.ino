@@ -7,20 +7,25 @@
 #define IR_RECEIVER_PIN 3    // IR receiver pin
 #define BUTTON_PIN 4         // Button pin
 #define BUZZER_PIN 5         // Buzzer pin
+#define sCommand 0x59
 
 // Constants
 const int MAX_BULLETS = 6;        // Maximum number of bullets
 const int LOW_FREQ = 2500;         // Low frequency for buzzer (in Hz)
 const int HIGH_FREQ = 4500;       // High frequency for buzzer (in Hz)
-const int QUEUE_SIZE = 3;          // queue size for buzzer sounds
+const int QUEUE_SIZE = 4;          // queue size for buzzer sounds
 const int samplingRate = 50;       // 20 Hz = 50 ms
 
 // Global variables
 volatile int bulletCount = MAX_BULLETS;  // Current number of bullets
-bool buttonPressed = false;              // Button press status
 volatile bool motionDetected = false;    // changes to true if mpu ISR triggered
 unsigned long lastSampleTime = 0;        // last sample time of mpu
+const unsigned long debounceDelay = 50;  // 50 ms debounce time
+unsigned long lastDebounceTime = 0;      // Store the last debounce time
+bool buttonState = HIGH;                 // Current state of the button
+bool lastButtonState = HIGH;             // Previous state of the button
 MPU6050 mpu;                             // MPU6050 object
+unsigned long hitData = 0x00;
 
 // Buzzer queue variables
 struct BuzzerSound {
@@ -92,16 +97,24 @@ void loop() {
     }
   }
 
-  // Check for button press
-  if (digitalRead(BUTTON_PIN) == LOW) { // Button is pressed
-    if (!buttonPressed) { // Only trigger once per press
-      buttonPressed = true;
-      Serial.println("Shoot");
-      handleButtonPress();
-    }
-  } else {
-    buttonPressed = false; // Reset button state when released
+  // button check
+  int reading = digitalRead(BUTTON_PIN);
+  // If the button state has changed, reset the debounce timer
+  if (reading != lastButtonState) {
+    lastDebounceTime = millis();
   }
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    if (reading == LOW && buttonState == HIGH) {
+      // Button is pressed, only fire once per press
+      buttonState = LOW;
+      handleButtonPress();
+    } else if (reading == HIGH && buttonState == LOW) {
+      // Button is released
+      buttonState = HIGH;  // Reset the button state
+    }
+  }
+  // Save the current reading as the last button state
+  lastButtonState = reading;
 
   // Check for incoming player state updates from the server
   //if (Serial.available() >= sizeof(PlayerState)) {
@@ -115,6 +128,14 @@ void loop() {
     //bulletCount = playerState.bullet;
   //}
 
+  if (Serial.available() > 0) {
+    String command = Serial.readStringUntil('\n'); 
+    if (command == "reload") {
+      bulletCount = 6;
+      playReloadSound();
+    }
+  }
+
   // Buzzer playing routine using queue
   if (millis() - lastBuzzerTime > 500) {
     if (queueStart != queueEnd) {
@@ -126,6 +147,7 @@ void loop() {
       queueStart = (queueStart + 1) % QUEUE_SIZE;
     }
   }
+
 }
 void mpuISR() {
   motionDetected = true;
@@ -141,16 +163,20 @@ void handleButtonPress() {
   else {
     // bullets > 0
     int freq = 2500 + 400*(bulletCount-1);
+    //if (IrReceiver.decode() && IrReceiver.decodedIRData.command == sCommand) {
     if (IrReceiver.decode()) {
       // successful shot, freq based on remaining bulletCount. Sound once
+      Serial.println("Hit");
       addToBuzzerQueue(freq, 200);
-      Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX); // Print "old" raw data
+      Serial.println(IrReceiver.decodedIRData.address, HEX); // Print "old" raw data
+      //Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX); // Print "old" raw data
       IrReceiver.printIRResultShort(&Serial); // Print complete received data in one line
       IrReceiver.printIRSendUsage(&Serial);   // Print the statement required to send this data
-      IrReceiver.resume(); // Enable receiving of the next value
+      IrReceiver.resume();
     }
     else {
-      // shot missed, freq based on reamining bulletCount. Sound twice
+      // shot missed/stray sigbal. Freq based on reamining bulletCount. Sound twice
+      Serial.println("Miss");
       addToBuzzerQueue(freq, 200);
       addToBuzzerQueue(freq, 200);
     }
