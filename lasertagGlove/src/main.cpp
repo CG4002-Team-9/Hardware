@@ -14,7 +14,7 @@
 
 // Define constants
 #define DEBOUNCE_DELAY 200
-#define MPU_SAMPLING_RATE 20 // in Hz
+#define MPU_SAMPLING_RATE 40 // in Hz
 #define IR_SEARCH_TIMEOUT 200
 #define NUM_SAMPLES 30
 
@@ -115,7 +115,7 @@ void setup()
     mpu.setFullScaleGyroRange(MPU6050_GYRO_FS_500);
 
     mpu.setDHPFMode(MPU6050_DHPF_0P63);
-    mpu.setDLPFMode(MPU6050_DLPF_BW_42);
+    mpu.setDLPFMode(MPU6050_DLPF_BW_20);
 
     mpu.setMotionDetectionThreshold(50);
     mpu.setMotionDetectionDuration(5);
