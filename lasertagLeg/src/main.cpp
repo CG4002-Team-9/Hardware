@@ -92,8 +92,8 @@ void setupMPU()
       ;
   }
 
-  mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
-  mpu.setFullScaleGyroRange(MPU6050_GYRO_FS_500);
+  mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_16);
+  mpu.setFullScaleGyroRange(MPU6050_GYRO_FS_2000);
 
   mpu.setDHPFMode(MPU6050_DHPF_5);
   mpu.setDLPFMode(MPU6050_DLPF_BW_42);
