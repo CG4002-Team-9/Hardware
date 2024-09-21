@@ -419,6 +419,7 @@ void handshake(uint8_t seq) {
   } while (ackTracker.synAck != NOT_WAITING_FOR_ACK);
 
   isHandshaked = true;
+  shootSeq = seq;
 }
 
 void waitAck(int ms) {

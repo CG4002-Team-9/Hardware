@@ -235,6 +235,7 @@ void handshake(uint8_t seq) {
   } while (ackTracker.synAck != NOT_WAITING_FOR_ACK);
 
   isHandshaked = true;
+  kickSeq = seq;
 }
 
 char handleRxPacket() {
