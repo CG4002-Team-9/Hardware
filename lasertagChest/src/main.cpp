@@ -115,17 +115,269 @@ void playSoundsFromQueue()
   }
 }
 
-void playHitDetected()
+void playHitDetected(int hp)
 {
-  // Enqueue sounds when the player is hit
-  Sound sound;
-  sound.duration = 100;
-  sound.note = NOTE_G4;
-  soundQueue.enqueue(sound);
-  sound.note = NOTE_A4;
-  soundQueue.enqueue(sound);
-  sound.note = NOTE_B4;
-  soundQueue.enqueue(sound);
+    Sound sound;
+    sound.duration = 100;
+
+    switch (hp)
+    {
+        case 95:
+            sound.note = NOTE_A5;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_B5;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_C6;
+            soundQueue.enqueue(sound);
+            break;
+        case 90:
+            sound.note = NOTE_G5;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_A5;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_B5;
+            soundQueue.enqueue(sound);
+            break;
+        case 85:
+            sound.note = NOTE_F5;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_G5;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_A5;
+            soundQueue.enqueue(sound);
+            break;
+        case 80:
+            sound.note = NOTE_E5;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_F5;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_G5;
+            soundQueue.enqueue(sound);
+            break;
+        case 75:
+            sound.note = NOTE_D5;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_E5;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_F5;
+            soundQueue.enqueue(sound);
+            break;
+        case 70:
+            sound.note = NOTE_C5;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_D5;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_E5;
+            soundQueue.enqueue(sound);
+            break;
+        case 65:
+            sound.note = NOTE_B4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_C5;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_D5;
+            soundQueue.enqueue(sound);
+            break;
+        case 60:
+            sound.note = NOTE_A4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_B4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_C5;
+            soundQueue.enqueue(sound);
+            break;
+        case 55:
+            sound.note = NOTE_G4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_A4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_B4;
+            soundQueue.enqueue(sound);
+            break;
+        case 50:
+            sound.note = NOTE_F4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_G4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_A4;
+            soundQueue.enqueue(sound);
+            break;
+        case 45:
+            sound.note = NOTE_E4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_F4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_G4;
+            soundQueue.enqueue(sound);
+            break;
+        case 40:
+            sound.note = NOTE_D4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_E4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_F4;
+            soundQueue.enqueue(sound);
+            break;
+        case 35:
+            sound.note = NOTE_C4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_D4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_E4;
+            soundQueue.enqueue(sound);
+            break;
+        case 30:
+            sound.note = NOTE_B3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_C4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_D4;
+            soundQueue.enqueue(sound);
+            break;
+        case 25:
+            sound.note = NOTE_A3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_B3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_C4;
+            soundQueue.enqueue(sound);
+            break;
+        case 20:
+            sound.note = NOTE_G3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_A3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_B3;
+            soundQueue.enqueue(sound);
+            break;
+        case 15:
+            sound.note = NOTE_F3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_G3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_A3;
+            soundQueue.enqueue(sound);
+            break;
+        case 10:
+            sound.note = NOTE_E3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_F3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_G3;
+            soundQueue.enqueue(sound);
+            break;
+        case 5:
+            sound.note = NOTE_D3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_E3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_F3;
+            soundQueue.enqueue(sound);
+            break;
+        case 0:
+            sound.note = NOTE_C3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_D3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_E3;
+            soundQueue.enqueue(sound);
+            break;
+        default:
+            // Optionally handle unexpected hp values here
+            break;
+    }
+}
+
+void playShieldHitDetected(int shield_hp)
+{
+    Sound sound;
+    sound.duration = 100;
+
+    switch (shield_hp)
+    {
+        case 45:
+            sound.note = NOTE_G4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_F4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_E4;
+            soundQueue.enqueue(sound);
+            break;
+        case 40:
+            sound.note = NOTE_F4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_E4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_D4;
+            soundQueue.enqueue(sound);
+            break;
+        case 35:
+            sound.note = NOTE_E4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_D4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_C4;
+            soundQueue.enqueue(sound);
+            break;
+        case 30:
+            sound.note = NOTE_D4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_C4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_B3;
+            soundQueue.enqueue(sound);
+            break;
+        case 25:
+            sound.note = NOTE_C4;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_B3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_A3;
+            soundQueue.enqueue(sound);
+            break;
+        case 20:
+            sound.note = NOTE_B3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_A3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_G3;
+            soundQueue.enqueue(sound);
+            break;
+        case 15:
+            sound.note = NOTE_A3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_G3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_F3;
+            soundQueue.enqueue(sound);
+            break;
+        case 10:
+            sound.note = NOTE_G3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_F3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_E3;
+            soundQueue.enqueue(sound);
+            break;
+        case 5:
+            sound.note = NOTE_F3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_E3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_D3;
+            soundQueue.enqueue(sound);
+            break;
+        case 0:
+            sound.note = NOTE_E3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_D3;
+            soundQueue.enqueue(sound);
+            sound.note = NOTE_C3;
+            soundQueue.enqueue(sound);
+            break;
+        default:
+            break;
+    }
 }
 
 void playRespawn()
@@ -133,11 +385,11 @@ void playRespawn()
   // Enqueue sounds when the player respawns
   Sound sound;
   sound.duration = 80;
+  sound.note = NOTE_C4;
+  soundQueue.enqueue(sound);
   sound.note = NOTE_C5;
   soundQueue.enqueue(sound);
-  sound.note = NOTE_D5;
-  soundQueue.enqueue(sound);
-  sound.note = NOTE_E5;
+  sound.note = NOTE_C6;
   soundQueue.enqueue(sound);
 }
 
@@ -146,8 +398,10 @@ void receive_data()
 {
   // Placeholder function to update HP and Shield HP externally
   // Example:
-  // myPlayer.hp = new_hp_value;
-  // myPlayer.shield_hp = new_shield_hp_value;
+  int prev_hp = myPlayer.hp;
+  int prev_shield_hp = myPlayer.shield_hp;
+  myPlayer.hp = 95;
+  myPlayer.shield_hp = 50;
 
   // For now, just print the values (you can replace this with actual data updates)
   Serial.print(F("Current HP: "));
@@ -155,9 +409,18 @@ void receive_data()
   Serial.print(F("Current Shield HP: "));
   Serial.println(myPlayer.shield_hp);
 
-  // For demo, let's assume the player got hit, and play the hit sound
-  if (myPlayer.hp < HP_MAX)
+  // if player hp increased, they got revived
+  if (myPlayer.hp > prev_hp)
   {
-    playHitDetected();
+    playRespawn();
+  }
+  else if (myPlayer.hp < prev_hp)
+  {
+    playHitDetected(myPlayer.hp);
+  }
+  // in situation where player runs out of shield and loses hp from the attack, hp loss feedback is prioritized
+  else if (myPlayer.shield_hp < prev_shield_hp)
+  {
+    playShieldHitDetected(myPlayer.shield_hp);
   }
 }
