@@ -17,7 +17,7 @@
 #define DEBOUNCE_DELAY 200
 #define MPU_SAMPLING_RATE 40  // in Hz
 #define IR_SEARCH_TIMEOUT 200
-#define NUM_SAMPLES 30
+#define NUM_SAMPLES 60
 
 // Define packet Types
 #define SYN 'S'
@@ -162,19 +162,19 @@ void setup() {
   mpu.setYGyroOffset(mpuCal.gy_offset);
   mpu.setZGyroOffset(mpuCal.gz_offset);
 
-  Serial.print(F("Player address: 0x"));
-  Serial.println(myPlayer.address, HEX);
+  // Serial.print(F("Player address: 0x"));
+  // Serial.println(myPlayer.address, HEX);
 
   buzzer.begin(BUZZER_PIN);
 
   mpu.initialize();
   if (!mpu.testConnection()) {
-    Serial.println(F("MPU6050 connection failed"));
+  //  Serial.println(F("MPU6050 connection failed"));
     while (1)
       ;
   }
 
-  mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
+  mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_4);
   mpu.setFullScaleGyroRange(MPU6050_GYRO_FS_500);
 
   mpu.setDHPFMode(MPU6050_DHPF_0P63);
@@ -196,7 +196,7 @@ void setup() {
   pinMode(IR_RECEIVE_PIN, INPUT);
   IrReceiver.begin(IR_RECEIVE_PIN);
   playSuccessfulReload();
-  Serial.println(F("Setup complete"));
+  //Serial.println(F("Setup complete"));
 }
 
 void loop() {
@@ -260,17 +260,16 @@ void loop() {
   }
 
   // mpu data collect subroutine
-  if (isMotionDetected && millis() - lastSampleTime > SAMPLING_DELAY) {
+  if (isMotionDetected && (millis() - lastSampleTime > SAMPLING_DELAY)) {
     int16_t ax, ay, az;
     int16_t gx, gy, gz;
     mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-
+    
     isSendingIMU = true;
     sendIMUDataToServer(ax, ay, az, gx, gy, gz);
-
+    
     lastSampleTime = millis();
-    if (mpuSamples++ >= NUM_SAMPLES) {
-      // sendIMUDataToServer(ax, ay, az, gx, gy, gz);
+    if (++mpuSamples >= NUM_SAMPLES) {
       mpuSamples = 0;
       isMotionDetected = false;
       playMotionEnded();
@@ -410,16 +409,19 @@ void sendIMUDataToServer(int16_t ax, int16_t ay, int16_t az, int16_t gx, int16_t
   Serial.write((byte *)&dataPacket, sizeof(dataPacket));
 }
 
-void handshake(uint8_t seq) {
-  isHandshaked = false;
-  do {
-    sendSYNACK();
-    ackTracker.synAck = seq;
-    waitAck(ACK_TIMEOUT);
-  } while (ackTracker.synAck != NOT_WAITING_FOR_ACK);
+void sendACK(uint8_t seq) {
+  ackPacket.seq = seq;
+  crc.reset();
+  crc.add((byte *)&ackPacket, sizeof(ackPacket) - 1);
+  ackPacket.crc = crc.calc();
+  Serial.write((byte *)&ackPacket, sizeof(ackPacket));
+}
 
-  isHandshaked = true;
-  shootSeq = seq;
+void sendSYNACK() {
+  crc.reset();
+  crc.add((byte *)&synAckPacket, sizeof(synAckPacket) - 1);
+  synAckPacket.crc = crc.calc();
+  Serial.write((byte *)&synAckPacket, sizeof(synAckPacket));
 }
 
 void waitAck(int ms) {
@@ -434,33 +436,29 @@ void waitAck(int ms) {
   }
 }
 
-void sendACK(uint8_t seq) {
-  ackPacket.seq = seq;
-  crc.reset();
-  crc.add((byte *)&ackPacket, sizeof(ackPacket) - 1);
-  ackPacket.crc = crc.calc();
-  Serial.write((byte *)&ackPacket, sizeof(ackPacket));
-}
+void handshake(uint8_t seq) {
+  isHandshaked = false;
+  do {
+    sendSYNACK();
+    ackTracker.synAck = seq;
+    waitAck(ACK_TIMEOUT);
+  } while (ackTracker.synAck != NOT_WAITING_FOR_ACK);
 
-
-void sendSYNACK() {
-  crc.reset();
-  crc.add((byte *)&synAckPacket, sizeof(synAckPacket) - 1);
-  synAckPacket.crc = crc.calc();
-  Serial.write((byte *)&synAckPacket, sizeof(synAckPacket));
+  isHandshaked = true;
+  shootSeq = seq;
 }
 
 char handleRxPacket() {
   char buffer[20];
   Serial.readBytes(buffer, 20);
-
+  
   uint8_t crcReceived = buffer[19];
   crc.reset();
   crc.add(buffer, 19);
   if (!(crc.calc() == crcReceived)) {
     return INVALID_PACKET;
   }
-
+  
   char packetType = buffer[0];
   uint8_t seqReceived = buffer[1];
 

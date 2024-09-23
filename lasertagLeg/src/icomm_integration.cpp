@@ -96,7 +96,7 @@ char handleRxPacket();
 
   setupMPU();
 
-  Serial.println(F("Leg monitor setup complete"));
+  //Serial.println(F("Leg monitor setup complete"));
 }
 
 void loop() {
@@ -190,7 +190,7 @@ void sendSoccerToServer() {
   // Serial.println(myPlayer.address, HEX);
   getKickPacket();
   do {
-    sendKICK();
+    Serial.write((byte *)&kickPacket, sizeof(kickPacket));
     ackTracker.kickAck = kickPacket.seq;
     waitAck(ACK_TIMEOUT);
   } while (ackTracker.kickAck != NOT_WAITING_FOR_ACK);
@@ -201,10 +201,6 @@ void getKickPacket() {
   crc.reset();
   crc.add((byte *)&kickPacket, sizeof(kickPacket) - 1);
   kickPacket.crc = crc.calc();
-}
-
-void sendKICK() {
-  Serial.write((byte *)&kickPacket, sizeof(kickPacket));
 }
 
 void sendSYNACK() {
@@ -241,7 +237,7 @@ void handshake(uint8_t seq) {
 char handleRxPacket() {
   char buffer[20];
   Serial.readBytes(buffer, 20);
-
+  
   uint8_t crcReceived = buffer[19];
   crc.reset();
   crc.add(buffer, 19);

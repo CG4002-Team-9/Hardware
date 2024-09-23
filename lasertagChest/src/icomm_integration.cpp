@@ -90,19 +90,19 @@ void setup() {
   myPlayer.hp = HP_MAX;
   myPlayer.shield_hp = SHIELD_HP_MAX;
 
-  Serial.print(F("Player address: 0x"));
-  Serial.println(myPlayer.address, HEX);
-  Serial.print(F("Initial HP: "));
-  Serial.println(myPlayer.hp);
-  Serial.print(F("Initial Shield HP: "));
-  Serial.println(myPlayer.shield_hp);
+  // Serial.print(F("Player address: 0x"));
+  // Serial.println(myPlayer.address, HEX);
+  // Serial.print(F("Initial HP: "));
+  // Serial.println(myPlayer.hp);
+  // Serial.print(F("Initial Shield HP: "));
+  // Serial.println(myPlayer.shield_hp);
 
   buzzer.begin(BUZZER_PIN);
 
   // Initialize the IR emitter
   setupIR();
 
-  Serial.println(F("Vest setup complete"));
+  //Serial.println(F("Vest setup complete"));
 }
 
 void loop() {
