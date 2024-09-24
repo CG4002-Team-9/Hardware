@@ -3,6 +3,7 @@
 #include <Tone.h>
 #include <ArduinoQueue.h>
 #include <EEPROM.h>
+#include "CRC8.h"
 
 // Define I/O pins
 #define MPU_INTERRUPT_PIN 2
@@ -12,6 +13,14 @@
 #define KICK_DELAY 2000 // Delay in ms for kick detection
 #define NUM_SAMPLES 30
 #define PLAYER_ADDRESS_EEPROM 0 // EEPROM address to store/retrieve player address
+
+#define SYN 'S'
+#define SYNACK 'C'
+#define ACK 'A'
+#define KICK 'K'
+#define INVALID_PACKET 'X'
+#define NOT_WAITING_FOR_ACK -1
+#define ACK_TIMEOUT 200
 
 // Define global variables
 struct Player
@@ -25,9 +34,43 @@ typedef struct Sound
   uint8_t duration;
 } Sound;
 
+struct AckPacket
+{
+  char packetType = ACK;
+  uint8_t seq = 0;
+  byte padding[17] = {0};
+  uint8_t crc;
+} ackPacket;
+
+struct KickPacket
+{
+  char packetType = KICK;
+  uint8_t seq = 0;
+  byte padding[17] = {0};
+  uint8_t crc;
+} kickPacket;
+
+struct SynAckPacket
+{
+  char packetType = SYNACK;
+  uint8_t seq = 0;
+  byte padding[17] = {0};
+  uint8_t crc;
+} synAckPacket;
+
+struct AckTracker
+{
+  int16_t synAck = -1;
+  int16_t kickAck = -1;
+} ackTracker;
+
 Tone buzzer;
 MPU6050 mpu;
 ArduinoQueue<Sound> soundQueue(10);
+CRC8 crc;
+
+uint8_t kickSeq = 0;
+bool isHandshaked = false;
 
 unsigned long lastSoundTime = 0;
 uint16_t NOTE_DELAY = 0;
@@ -41,6 +84,14 @@ void sendSoccerToServer(); // Placeholder for sending event to server
 void playSoundsFromQueue();
 void loadPlayer();
 
+// BLE
+void getKickPacket();
+void sendKICK();
+void sendSYNACK();
+void waitAck(int ms);
+void handshake(uint8_t seq);
+char handleRxPacket();
+
 void setup()
 {
   Serial.begin(115200);
@@ -52,11 +103,16 @@ void setup()
 
   setupMPU();
 
-  Serial.println(F("Leg monitor setup complete"));
+  // Serial.println(F("Leg monitor setup complete"));
 }
 
 void loop()
 {
+  if (Serial.available() >= 20)
+  {
+    handleRxPacket();
+  }
+
   // Sound playing subroutine
   playSoundsFromQueue();
 
@@ -77,8 +133,8 @@ void loadPlayer()
 
   // Read player address from EEPROM
   myPlayer.address = EEPROM.read(PLAYER_ADDRESS_EEPROM);
-  Serial.print(F("Player address loaded from EEPROM: 0x"));
-  Serial.println(myPlayer.address, HEX);
+  // Serial.print(F("Player address loaded from EEPROM: 0x"));
+  // Serial.println(myPlayer.address, HEX);
 }
 
 // Initialize MPU and interrupt
@@ -150,6 +206,98 @@ void sendSoccerToServer()
 {
   // Placeholder function to send kick event to server
   // You can implement actual sending logic here
-  Serial.print(F("Kick event sent to server for player address: 0x"));
-  Serial.println(myPlayer.address, HEX);
+  // Serial.print(F("Kick event sent to server for player address: 0x"));
+  // Serial.println(myPlayer.address, HEX);
+  getKickPacket();
+  do
+  {
+    Serial.write((byte *)&kickPacket, sizeof(kickPacket));
+    ackTracker.kickAck = kickPacket.seq;
+    waitAck(ACK_TIMEOUT);
+  } while (ackTracker.kickAck != NOT_WAITING_FOR_ACK);
+}
+
+void getKickPacket()
+{
+  kickPacket.seq = ++kickSeq;
+  crc.reset();
+  crc.add((byte *)&kickPacket, sizeof(kickPacket) - 1);
+  kickPacket.crc = crc.calc();
+}
+
+void sendSYNACK()
+{
+  crc.reset();
+  crc.add((byte *)&synAckPacket, sizeof(synAckPacket) - 1);
+  synAckPacket.crc = crc.calc();
+  Serial.write((byte *)&synAckPacket, sizeof(synAckPacket));
+}
+
+void waitAck(int ms)
+{
+  for (int i = 0; i < ms; i++)
+  {
+    if (Serial.available() >= 20)
+    {
+      char packetTypeRx = handleRxPacket();
+      if (packetTypeRx == SYNACK)
+      {
+        return;
+      }
+    }
+    delay(1);
+  }
+}
+
+void handshake(uint8_t seq)
+{
+  isHandshaked = false;
+  sendSYNACK();
+  // do {
+  //   sendSYNACK();
+  //   ackTracker.synAck = seq;
+  //   waitAck(ACK_TIMEOUT);
+  // } while (ackTracker.synAck != NOT_WAITING_FOR_ACK);
+
+  isHandshaked = true;
+  kickSeq = seq;
+}
+
+char handleRxPacket()
+{
+  char buffer[20];
+  Serial.readBytes(buffer, 20);
+
+  uint8_t crcReceived = buffer[19];
+  crc.reset();
+  crc.add(buffer, 19);
+  if (!(crc.calc() == crcReceived))
+  {
+    // Serial.readString(); // clear the buffer just in case
+    return INVALID_PACKET;
+  }
+
+  char packetType = buffer[0];
+  uint8_t seqReceived = buffer[1];
+  switch (packetType)
+  {
+  case SYN:
+    handshake(seqReceived);
+    break;
+
+  case SYNACK:
+    ackTracker.synAck = NOT_WAITING_FOR_ACK;
+    break;
+
+  case ACK:
+    if (ackTracker.kickAck == seqReceived)
+    {
+      ackTracker.kickAck = NOT_WAITING_FOR_ACK;
+    }
+    break;
+
+  default:
+    break;
+  }
+  return packetType;
 }
