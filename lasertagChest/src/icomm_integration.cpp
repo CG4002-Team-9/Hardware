@@ -218,11 +218,12 @@ void waitAck(int ms) {
 
 void handshake(uint8_t seq) {
   isHandshaked = false;
-  do {
-    sendSYNACK();
-    ackTracker.synAck = seq;
-    waitAck(ACK_TIMEOUT);
-  } while (ackTracker.synAck != NOT_WAITING_FOR_ACK);
+  sendSYNACK();
+  // do {
+  //   sendSYNACK();
+  //   ackTracker.synAck = seq;
+  //   waitAck(ACK_TIMEOUT);
+  // } while (ackTracker.synAck != NOT_WAITING_FOR_ACK);
 
   isHandshaked = true;
 }
@@ -235,6 +236,7 @@ char handleRxPacket() {
   crc.reset();
   crc.add(buffer, 19);
   if (!(crc.calc() == crcReceived)) {
+    //Serial.readString(); // clear the buffer just in case
     return INVALID_PACKET;
   }
 
