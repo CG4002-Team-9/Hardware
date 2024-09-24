@@ -263,9 +263,6 @@ void loop()
     {
       if (IrReceiver.decode())
       {
-        // print all the data of the received IR signal
-        IrReceiver.printIRResultShort(&Serial, true);
-
         // if received data is valid with NEC2, enqueue the address
         if (IrReceiver.decodedIRData.protocol != UNKNOWN && IrReceiver.decodedIRData.address != myPlayer.address)
         {
@@ -276,15 +273,14 @@ void loop()
         IrReceiver.resume();
       }
     }
+    IrReceiver.stop();
 
     if (hitDetected)
     {
       playSuccessfulShot();
     }
-
     sendShotDataToServer(hitDetected, playerHit);
     isFindingIR = false;
-    IrReceiver.stop();
   }
 
   // mpu data collect subroutine
