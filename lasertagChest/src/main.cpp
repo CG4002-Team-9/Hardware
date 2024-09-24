@@ -13,7 +13,7 @@
 #define IR_SEND_INTERVAL 50  // Interval in ms to send IR signal
 #define PLAYER_ADDRESS 0x02  // Example player address, can be changed
 #define HP_MAX 100           // Maximum HP
-#define SHIELD_HP_MAX 50     // Maximum Shield HP
+#define SHIELD_HP_MAX 30     // Maximum Shield HP
 #define NOTE_DELAY_DEFAULT 0 // Default note delay
 
 // BLE
@@ -29,8 +29,8 @@
 struct Player
 {
   uint8_t address;
-  uint8_t hp;
-  uint8_t shield_hp;
+  uint8_t hp = 100;
+  uint8_t shield_hp = 0;
 } myPlayer;
 
 typedef struct Sound
@@ -61,7 +61,7 @@ struct AckTracker
   int16_t kickAck = -1;
 } ackTracker;
 
-ArduinoQueue<Sound> soundQueue(10);
+ArduinoQueue<Sound> soundQueue(20);
 Tone buzzer;
 unsigned long lastIRSendTime = 0;
 unsigned long lastSoundTime = 0;
@@ -72,8 +72,11 @@ CRC8 crc;
 bool isHandshaked = false;
 uint8_t updatePacketSeq = 99;
 
-void playHitDetected();
-void playRespawn();
+void playPlayerRespawn();
+void playShieldRecharged();
+void playShieldHit(uint8_t new_shield_hp);
+void playShieldDestroyed();
+void playPlayerHit(uint8_t new_hp);
 void setupIR();
 void sendIRData();
 void receive_data(); // Placeholder for external data updates
@@ -92,22 +95,11 @@ void setup()
   // EEPROM.write(0, PLAYER_ADDRESS);   // Uncomment once to store the address in EEPROM
   myPlayer.address = EEPROM.read(0); // Read the address from EEPROM
 
-  // Initialize player HP and Shield HP
-  myPlayer.hp = HP_MAX;
-  myPlayer.shield_hp = SHIELD_HP_MAX;
-
-  // Serial.print(F("Player address: 0x"));
-  // Serial.println(myPlayer.address, HEX);
-  // Serial.print(F("Initial HP: "));
-  // Serial.println(myPlayer.hp);
-  // Serial.print(F("Initial Shield HP: "));
-  // Serial.println(myPlayer.shield_hp);
-
   buzzer.begin(BUZZER_PIN);
 
   // Initialize the IR emitter
   setupIR();
-
+  playPlayerRespawn();
   // Serial.println(F("Vest setup complete"));
 }
 
@@ -160,23 +152,56 @@ void playSoundsFromQueue()
   }
 }
 
-void playHitDetected()
+// TODO: Implement external data updates (e.g., from Bluetooth or server)
+void receive_data(char *buffer)
 {
-  // Enqueue sounds when the player is hit
-  Sound sound;
-  sound.duration = 100;
-  sound.note = NOTE_G4;
-  soundQueue.enqueue(sound);
-  sound.note = NOTE_A4;
-  soundQueue.enqueue(sound);
-  sound.note = NOTE_B4;
-  soundQueue.enqueue(sound);
+  // Placeholder function to update HP and Shield HP externally
+  updatePacketSeq = buffer[1];
+  uint8_t new_hp = buffer[2];
+  uint8_t new_shield_hp = buffer[3];
+  uint8_t soundType = buffer[4];
+
+  if (soundType == 2 && myPlayer.shield_hp == 0 && new_shield_hp == SHIELD_HP_MAX)
+  {
+    playShieldRecharged();
+  }
+  else if (soundType == 1)
+  {
+    // few cases to play sound
+    // 1. when shield is hit, but it is not destroyed
+    // 2. when shield is destroyed
+    // 3. when player is hit
+    // 4. when player is respawned
+    // shield could be destroyed and player could be hit at the same time
+    if (myPlayer.shield_hp > 0 && new_shield_hp > 0 && myPlayer.shield_hp > new_shield_hp)
+    {
+      playShieldHit(new_shield_hp);
+    }
+    else if (myPlayer.shield_hp > 0 && new_shield_hp == 0)
+    {
+      playShieldDestroyed();
+    }
+    if (myPlayer.shield_hp == 0 && new_shield_hp == 0 && new_hp < myPlayer.hp)
+    {
+      playPlayerHit(new_hp);
+    }
+    else if (new_hp == HP_MAX && myPlayer.hp < HP_MAX)
+    {
+      playPlayerRespawn();
+    }
+  }
+
+  myPlayer.hp = new_hp;
+  myPlayer.shield_hp = new_shield_hp;
 }
 
-void playRespawn()
+void playPlayerRespawn()
 {
   // Enqueue sounds when the player respawns
   Sound sound;
+  sound.duration = 500;
+  sound.note = NOTE_G2;
+  soundQueue.enqueue(sound);
   sound.duration = 80;
   sound.note = NOTE_C5;
   soundQueue.enqueue(sound);
@@ -186,24 +211,199 @@ void playRespawn()
   soundQueue.enqueue(sound);
 }
 
-// TODO: Implement external data updates (e.g., from Bluetooth or server)
-void receive_data(char *buffer)
+void playShieldRecharged()
 {
-  // Placeholder function to update HP and Shield HP externally
-  updatePacketSeq = buffer[1];
-  myPlayer.hp = buffer[2];
-  myPlayer.shield_hp = buffer[3];
+  Sound sound;
+  sound.duration = 100;
+  sound.note = NOTE_C5;
+  soundQueue.enqueue(sound);
+  sound.note = NOTE_D5;
+  soundQueue.enqueue(sound);
+  sound.note = NOTE_E5;
+  soundQueue.enqueue(sound);
+}
 
-  // For now, just print the values (you can replace this with actual data updates)
-  // Serial.print(F("Current HP: "));
-  // Serial.println(myPlayer.hp);
-  // Serial.print(F("Current Shield HP: "));
-  // Serial.println(myPlayer.shield_hp);
-
-  // For demo, let's assume the player got hit, and play the hit sound
-  if (myPlayer.hp < HP_MAX)
+void playShieldHit(uint8_t new_shield_hp)
+{
+  Sound sound;
+  sound.duration = 100;
+  sound.note = 0;
+  soundQueue.enqueue(sound);
+  switch (new_shield_hp)
   {
-    playHitDetected();
+  case 25:
+    sound.note = NOTE_C5;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_D5;
+    soundQueue.enqueue(sound);
+    break;
+  case 20:
+    sound.note = NOTE_D5;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_E5;
+    soundQueue.enqueue(sound);
+    break;
+  case 15:
+    sound.note = NOTE_E5;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_F5;
+    soundQueue.enqueue(sound);
+    break;
+  case 10:
+    sound.note = NOTE_F5;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_G5;
+    soundQueue.enqueue(sound);
+    break;
+  case 5:
+    sound.note = NOTE_G5;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_A5;
+    soundQueue.enqueue(sound);
+    break;
+  default:
+    break;
+  }
+}
+
+void playShieldDestroyed()
+{
+  Sound sound;
+  sound.duration = 100;
+  sound.note = NOTE_A5;
+  soundQueue.enqueue(sound);
+  sound.note = NOTE_B5;
+  soundQueue.enqueue(sound);
+  sound.note = NOTE_C6;
+  soundQueue.enqueue(sound);
+}
+
+// player hit must be in decrements of 5 from 95 to 5
+void playPlayerHit(uint8_t new_hp)
+{
+  Sound sound;
+  sound.duration = 100;
+  sound.note = 0;
+  soundQueue.enqueue(sound);
+  switch (new_hp)
+  {
+  case 95:
+    sound.note = NOTE_C3;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_D3;
+    soundQueue.enqueue(sound);
+    break;
+  case 90:
+    sound.note = NOTE_D3;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_E3;
+    soundQueue.enqueue(sound);
+    break;
+  case 85:
+    sound.note = NOTE_E3;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_F3;
+    soundQueue.enqueue(sound);
+    break;
+  case 80:
+    sound.note = NOTE_F3;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_G3;
+    soundQueue.enqueue(sound);
+    break;
+  case 75:
+    sound.note = NOTE_G3;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_A3;
+    soundQueue.enqueue(sound);
+    break;
+  case 70:
+    sound.note = NOTE_A3;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_B3;
+    soundQueue.enqueue(sound);
+    break;
+  case 65:
+    sound.note = NOTE_B3;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_C4;
+    soundQueue.enqueue(sound);
+    break;
+  case 60:
+    sound.note = NOTE_C4;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_D4;
+    soundQueue.enqueue(sound);
+    break;
+  case 55:
+    sound.note = NOTE_D4;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_E4;
+    soundQueue.enqueue(sound);
+    break;
+  case 50:
+    sound.note = NOTE_E4;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_F4;
+    soundQueue.enqueue(sound);
+    break;
+  case 45:
+    sound.note = NOTE_F4;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_G4;
+    soundQueue.enqueue(sound);
+    break;
+  case 40:
+    sound.note = NOTE_G4;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_A4;
+    soundQueue.enqueue(sound);
+    break;
+  case 35:
+    sound.note = NOTE_A4;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_B4;
+    soundQueue.enqueue(sound);
+    break;
+  case 30:
+    sound.note = NOTE_B4;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_C5;
+    soundQueue.enqueue(sound);
+    break;
+  case 25:
+    sound.note = NOTE_C5;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_D5;
+    soundQueue.enqueue(sound);
+    break;
+  case 20:
+
+    sound.note = NOTE_D5;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_E5;
+    soundQueue.enqueue(sound);
+    break;
+  case 15:
+    sound.note = NOTE_E5;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_F5;
+    soundQueue.enqueue(sound);
+    break;
+  case 10:
+    sound.note = NOTE_F5;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_G5;
+    soundQueue.enqueue(sound);
+    break;
+  case 5:
+    sound.note = NOTE_G5;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_A5;
+    soundQueue.enqueue(sound);
+    break;
+  default:
+    break;
   }
 }
 
