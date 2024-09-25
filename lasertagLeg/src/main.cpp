@@ -83,6 +83,7 @@ void kickDetected();
 void sendSoccerToServer(); // Placeholder for sending event to server
 void playSoundsFromQueue();
 void loadPlayer();
+void playConnectionEstablished();
 
 // BLE
 void getKickPacket();
@@ -95,6 +96,11 @@ char handleRxPacket();
 void setup()
 {
   Serial.begin(115200);
+  Serial.write('+');
+  Serial.write('+');
+  Serial.write('+');
+  delay(500);
+  Serial.print("AT+RESTART\r\n");
 
   // Load player information (address) from EEPROM
   loadPlayer();
@@ -186,6 +192,22 @@ void playKickDetected()
   soundQueue.enqueue(sound);
 }
 
+void playConnectionEstablished()
+{
+  // play a sound to indicate connection established
+  Sound sound;
+  sound.duration = 200;
+  sound.note = NOTE_C5;
+  soundQueue.enqueue(sound);
+  sound.duration = 120;
+  sound.note = NOTE_A4;
+  soundQueue.enqueue(sound);
+  sound.note = NOTE_F4;
+  soundQueue.enqueue(sound);
+  sound.note = NOTE_E5;
+  soundQueue.enqueue(sound);
+}
+
 // Queue-based sound playing
 void playSoundsFromQueue()
 {
@@ -252,6 +274,7 @@ void waitAck(int ms)
 void handshake(uint8_t seq)
 {
   isHandshaked = false;
+  playConnectionEstablished();
   sendSYNACK();
   // do {
   //   sendSYNACK();
@@ -273,7 +296,7 @@ char handleRxPacket()
   crc.add(buffer, 19);
   if (!(crc.calc() == crcReceived))
   {
-    // Serial.readString(); // clear the buffer just in case
+    Serial.readString(); // clear the buffer just in case
     return INVALID_PACKET;
   }
 
@@ -297,6 +320,8 @@ char handleRxPacket()
     break;
 
   default:
+    Serial.readString(); // clear the buffer just in case
+    return INVALID_PACKET;
     break;
   }
   return packetType;

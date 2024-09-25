@@ -139,6 +139,7 @@ void playShootBullet(uint8_t bullets);
 void playEmptyGun();
 void sendShotDataToServer(bool hitDetected, uint8_t playerHit); // could queue into a buffer which sends in a subroutine
 void sendIMUDataToServer(int16_t ax, int16_t ay, int16_t az, int16_t gx, int16_t gy, int16_t gz);
+void playConnectionEstablished();
 
 // BLE Function declarations
 void sendACK(uint8_t seq);
@@ -150,7 +151,11 @@ void handshake(uint8_t seq);
 void setup()
 {
   Serial.begin(115200);
-  // TODO: When startup, get the latest bullet count from the server
+  Serial.write('+');
+  Serial.write('+');
+  Serial.write('+');
+  delay(500);
+  Serial.print("AT+RESTART\r\n");
 
   // write to EEPROM the player address
   // EEPROM.write(0, 0x01);             // only do this once, then comment out
@@ -208,7 +213,6 @@ void setup()
 
   pinMode(IR_RECEIVE_PIN, INPUT);
   IrReceiver.begin(IR_RECEIVE_PIN);
-  playSuccessfulReload();
   // Serial.println(F("Setup complete"));
 }
 
@@ -232,6 +236,7 @@ void loop()
     else
     {
       playEmptyGun();
+      sendShotDataToServer(false, 0);
     }
     isButtonPressed = false;
   }
@@ -417,6 +422,22 @@ void playMotionEnded()
   isSendingIMU = false;
 }
 
+void playConnectionEstablished()
+{
+  // play a sound to indicate connection established
+  Sound sound;
+  sound.duration = 200;
+  sound.note = NOTE_C5;
+  soundQueue.enqueue(sound);
+  sound.duration = 120;
+  sound.note = NOTE_A4;
+  soundQueue.enqueue(sound);
+  sound.note = NOTE_F4;
+  soundQueue.enqueue(sound);
+  sound.note = NOTE_E5;
+  soundQueue.enqueue(sound);
+}
+
 void sendShotDataToServer(bool hitDetected, uint8_t playerHit)
 {
   // TODO: Implement this function
@@ -485,6 +506,7 @@ void waitAck(int ms)
 void handshake(uint8_t seq)
 {
   isHandshaked = false;
+  playConnectionEstablished();
   sendSYNACK();
   // do {
   //    sendSYNACK();
@@ -506,7 +528,7 @@ char handleRxPacket()
   crc.add(buffer, 19);
   if (!(crc.calc() == crcReceived))
   {
-    // Serial.readString(); // clear the buffer just in case
+    Serial.readString(); // clear the buffer just in case
     return INVALID_PACKET;
   }
 
@@ -549,6 +571,8 @@ char handleRxPacket()
     break;
 
   default:
+    Serial.readString(); // clear the buffer just in case
+    return INVALID_PACKET;
     break;
   }
   return packetType;

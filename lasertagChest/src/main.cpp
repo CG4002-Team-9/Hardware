@@ -81,6 +81,7 @@ void setupIR();
 void sendIRData();
 void receive_data(); // Placeholder for external data updates
 void playSoundsFromQueue();
+void playConnectionEstablished();
 
 void sendSYNACK();
 void waitAck(int ms);
@@ -90,6 +91,11 @@ char handleRxPacket();
 void setup()
 {
   Serial.begin(115200);
+  Serial.write('+');
+  Serial.write('+');
+  Serial.write('+');
+  delay(500);
+  Serial.print("AT+RESTART\r\n");
 
   // Set up the player address from EEPROM
   // EEPROM.write(0, PLAYER_ADDRESS);   // Uncomment once to store the address in EEPROM
@@ -99,7 +105,6 @@ void setup()
 
   // Initialize the IR emitter
   setupIR();
-  playPlayerRespawn();
   // Serial.println(F("Vest setup complete"));
 }
 
@@ -199,7 +204,7 @@ void playPlayerRespawn()
 {
   // Enqueue sounds when the player respawns
   Sound sound;
-  sound.duration = 500;
+  sound.duration = 255;
   sound.note = NOTE_G2;
   soundQueue.enqueue(sound);
   sound.duration = 80;
@@ -407,6 +412,22 @@ void playPlayerHit(uint8_t new_hp)
   }
 }
 
+void playConnectionEstablished()
+{
+  // play a sound to indicate connection established
+  Sound sound;
+  sound.duration = 200;
+  sound.note = NOTE_C5;
+  soundQueue.enqueue(sound);
+  sound.duration = 120;
+  sound.note = NOTE_A4;
+  soundQueue.enqueue(sound);
+  sound.note = NOTE_F4;
+  soundQueue.enqueue(sound);
+  sound.note = NOTE_E5;
+  soundQueue.enqueue(sound);
+}
+
 void sendACK(uint8_t seq)
 {
   ackPacket.seq = seq;
@@ -443,6 +464,7 @@ void waitAck(int ms)
 void handshake(uint8_t seq)
 {
   isHandshaked = false;
+  playConnectionEstablished();
   sendSYNACK();
   // do {
   //   sendSYNACK();
@@ -457,13 +479,13 @@ char handleRxPacket()
 {
   char buffer[20];
   Serial.readBytes(buffer, 20);
-
   uint8_t crcReceived = buffer[19];
   crc.reset();
   crc.add(buffer, 19);
   if (!(crc.calc() == crcReceived))
   {
-    // Serial.readString(); // clear the buffer just in case
+    Serial.readString();
+
     return INVALID_PACKET;
   }
 
@@ -489,6 +511,8 @@ char handleRxPacket()
     break;
 
   default:
+    Serial.readString();
+    return INVALID_PACKET;
     break;
   }
   return packetType;
