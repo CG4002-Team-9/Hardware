@@ -31,7 +31,7 @@ struct Player
 typedef struct Sound
 {
   uint16_t note;
-  uint8_t duration;
+  uint16_t duration;
 } Sound;
 
 struct AckPacket

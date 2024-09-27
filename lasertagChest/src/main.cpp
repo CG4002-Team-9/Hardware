@@ -36,7 +36,7 @@ struct Player
 typedef struct Sound
 {
   uint16_t note;
-  uint8_t duration;
+  uint16_t duration;
 } Sound;
 
 struct AckPacket
@@ -202,68 +202,86 @@ void receive_data(char *buffer)
 
 void playPlayerRespawn()
 {
-  // Enqueue sounds when the player respawns
+  // Include death sound first (low-pitched within acceptable octave), then respawn sound
   Sound sound;
-  sound.duration = 255;
-  sound.note = NOTE_G2;
+
+  // Death sound
+  sound.duration = 200;
+  sound.note = NOTE_G2; // Adjusted to octave 3
   soundQueue.enqueue(sound);
-  sound.duration = 80;
-  sound.note = NOTE_C5;
   soundQueue.enqueue(sound);
-  sound.note = NOTE_D5;
   soundQueue.enqueue(sound);
-  sound.note = NOTE_E5;
+
+  // Respawn sound (uplifting arpeggio)
+  sound.duration = 100;
+  sound.note = NOTE_C4;
+  soundQueue.enqueue(sound);
+  sound.note = NOTE_E4;
+  soundQueue.enqueue(sound);
+  sound.note = NOTE_G4;
   soundQueue.enqueue(sound);
 }
 
 void playShieldRecharged()
 {
+  // Arpeggio style sound to indicate shield recharge
   Sound sound;
-  sound.duration = 100;
-  sound.note = NOTE_C5;
-  soundQueue.enqueue(sound);
-  sound.note = NOTE_D5;
-  soundQueue.enqueue(sound);
-  sound.note = NOTE_E5;
-  soundQueue.enqueue(sound);
+  sound.duration = 70;
+  uint16_t notes[] = {NOTE_C5, NOTE_E5, NOTE_G5, NOTE_C6};
+
+  for (int i = 0; i < 4; i++)
+  {
+    sound.note = notes[i];
+    soundQueue.enqueue(sound);
+  }
 }
 
 void playShieldHit(uint8_t new_shield_hp)
 {
+  // Unique ascending sounds for each shield HP interval, using sharps
   Sound sound;
-  sound.duration = 100;
-  sound.note = 0;
-  soundQueue.enqueue(sound);
+  sound.duration = 70;
+
   switch (new_shield_hp)
   {
   case 25:
-    sound.note = NOTE_C5;
+    sound.note = NOTE_G4;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_D5;
+    sound.note = NOTE_GS4;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_G4;
     soundQueue.enqueue(sound);
     break;
   case 20:
-    sound.note = NOTE_D5;
+    sound.note = NOTE_A4;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_E5;
+    sound.note = NOTE_AS4;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_A4;
     soundQueue.enqueue(sound);
     break;
   case 15:
-    sound.note = NOTE_E5;
+    sound.note = NOTE_B4;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_F5;
+    sound.note = NOTE_C5;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_B4;
     soundQueue.enqueue(sound);
     break;
   case 10:
-    sound.note = NOTE_F5;
+    sound.note = NOTE_C5;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_G5;
+    sound.note = NOTE_CS5;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_C5;
     soundQueue.enqueue(sound);
     break;
   case 5:
-    sound.note = NOTE_G5;
+    sound.note = NOTE_D5;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_A5;
+    sound.note = NOTE_DS5;
+    soundQueue.enqueue(sound);
+    sound.note = NOTE_D5;
     soundQueue.enqueue(sound);
     break;
   default:
@@ -273,138 +291,138 @@ void playShieldHit(uint8_t new_shield_hp)
 
 void playShieldDestroyed()
 {
+  // Unique descending scale to indicate shield break with shorter durations
   Sound sound;
-  sound.duration = 100;
-  sound.note = NOTE_A5;
-  soundQueue.enqueue(sound);
-  sound.note = NOTE_B5;
-  soundQueue.enqueue(sound);
-  sound.note = NOTE_C6;
-  soundQueue.enqueue(sound);
+  sound.duration = 60; // Shortened duration
+  uint16_t notes[] = {NOTE_G5, NOTE_FS5, NOTE_F5, NOTE_E5, NOTE_DS5, NOTE_D5, NOTE_CS5, NOTE_C5};
+
+  for (int i = 0; i < 8; i++)
+  {
+    sound.note = notes[i];
+    soundQueue.enqueue(sound);
+  }
 }
 
-// player hit must be in decrements of 5 from 95 to 5
 void playPlayerHit(uint8_t new_hp)
 {
+  // Unique descending sounds for each HP interval, staying within octaves 3 to 5
   Sound sound;
   sound.duration = 100;
-  sound.note = 0;
-  soundQueue.enqueue(sound);
+
   switch (new_hp)
   {
   case 95:
-    sound.note = NOTE_C3;
+    sound.note = NOTE_E5;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_D3;
+    sound.note = NOTE_D5;
     soundQueue.enqueue(sound);
     break;
   case 90:
-    sound.note = NOTE_D3;
+    sound.note = NOTE_D5;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_E3;
+    sound.note = NOTE_CS5;
     soundQueue.enqueue(sound);
     break;
   case 85:
-    sound.note = NOTE_E3;
+    sound.note = NOTE_C5;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_F3;
+    sound.note = NOTE_B4;
     soundQueue.enqueue(sound);
     break;
   case 80:
-    sound.note = NOTE_F3;
+    sound.note = NOTE_B4;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_G3;
+    sound.note = NOTE_A4;
     soundQueue.enqueue(sound);
     break;
   case 75:
-    sound.note = NOTE_G3;
+    sound.note = NOTE_A4;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_A3;
+    sound.note = NOTE_GS4;
     soundQueue.enqueue(sound);
     break;
   case 70:
-    sound.note = NOTE_A3;
+    sound.note = NOTE_G4;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_B3;
+    sound.note = NOTE_FS4;
     soundQueue.enqueue(sound);
     break;
   case 65:
-    sound.note = NOTE_B3;
+    sound.note = NOTE_F4;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_C4;
+    sound.note = NOTE_E4;
     soundQueue.enqueue(sound);
     break;
   case 60:
-    sound.note = NOTE_C4;
+    sound.note = NOTE_E4;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_D4;
+    sound.note = NOTE_DS4;
     soundQueue.enqueue(sound);
     break;
   case 55:
     sound.note = NOTE_D4;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_E4;
+    sound.note = NOTE_CS4;
     soundQueue.enqueue(sound);
     break;
   case 50:
-    sound.note = NOTE_E4;
+    sound.note = NOTE_C4;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_F4;
+    sound.note = NOTE_B3;
     soundQueue.enqueue(sound);
     break;
   case 45:
-    sound.note = NOTE_F4;
+    sound.note = NOTE_B3;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_G4;
+    sound.note = NOTE_A3;
     soundQueue.enqueue(sound);
     break;
   case 40:
-    sound.note = NOTE_G4;
+    sound.note = NOTE_A3;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_A4;
+    sound.note = NOTE_GS3;
     soundQueue.enqueue(sound);
     break;
   case 35:
-    sound.note = NOTE_A4;
+    sound.note = NOTE_G3;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_B4;
+    sound.note = NOTE_FS3;
     soundQueue.enqueue(sound);
     break;
   case 30:
-    sound.note = NOTE_B4;
+    sound.note = NOTE_F3;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_C5;
+    sound.note = NOTE_E3;
     soundQueue.enqueue(sound);
     break;
   case 25:
-    sound.note = NOTE_C5;
+    sound.note = NOTE_E3;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_D5;
+    sound.note = NOTE_DS3;
     soundQueue.enqueue(sound);
     break;
   case 20:
-
-    sound.note = NOTE_D5;
+    sound.note = NOTE_D3;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_E5;
+    sound.note = NOTE_CS3;
     soundQueue.enqueue(sound);
     break;
   case 15:
-    sound.note = NOTE_E5;
+    sound.note = NOTE_C3;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_F5;
+    sound.note = NOTE_B3; // Reusing B3 to stay above octave 3
     soundQueue.enqueue(sound);
     break;
   case 10:
-    sound.note = NOTE_F5;
+    sound.note = NOTE_B3;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_G5;
+    sound.note = NOTE_A3;
     soundQueue.enqueue(sound);
     break;
   case 5:
-    sound.note = NOTE_G5;
+    sound.note = NOTE_A3;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_A5;
+    sound.note = NOTE_GS3;
     soundQueue.enqueue(sound);
     break;
   default:

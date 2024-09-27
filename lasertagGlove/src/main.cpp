@@ -42,7 +42,7 @@ struct Player
 typedef struct Sound
 {
   uint16_t note;
-  uint8_t duration;
+  uint16_t duration;
 } Sound;
 
 struct mpuCalibration
@@ -100,7 +100,7 @@ struct AckTracker
   int16_t shootAck = -1;
 } ackTracker;
 
-ArduinoQueue<Sound> soundQueue(10);
+ArduinoQueue<Sound> soundQueue(20);
 
 Tone buzzer;
 
@@ -158,16 +158,16 @@ void setup()
   Serial.print("AT+RESTART\r\n");
 
   // write to EEPROM the player address
-  // EEPROM.write(0, 0x01);             // only do this once, then comment out
+  // EEPROM.write(0, 0x02);             // only do this once, then comment out
   myPlayer.address = EEPROM.read(0); // read the address from EEPROM
 
   // save to EEPROM the calibration values
-  // mpuCal.ax_offset = -1633;
-  // mpuCal.ay_offset = -253;
-  // mpuCal.az_offset = 144;
-  // mpuCal.gx_offset = 47;
-  // mpuCal.gy_offset = -110;
-  // mpuCal.gz_offset = 15;
+  // mpuCal.ax_offset = -1560;
+  // mpuCal.ay_offset = -215;
+  // mpuCal.az_offset = 166;
+  // mpuCal.gx_offset = 28;
+  // mpuCal.gy_offset = -119;
+  // mpuCal.gz_offset = 18;
   // EEPROM.put(1, mpuCal); // only do this once, then comment out
 
   // read from EEPROM and set the calibration values
