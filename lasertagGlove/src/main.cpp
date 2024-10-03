@@ -30,6 +30,7 @@
 #define INVALID_PACKET 'X'
 #define NOT_WAITING_FOR_ACK -1
 #define ACK_TIMEOUT 200
+#define PACKET_SIZE 15
 
 // Define global variables
 
@@ -59,7 +60,7 @@ struct AckPacket
 {
   char packetType = ACK;
   uint8_t seq = 0;
-  byte padding[17] = {0};
+  byte padding[12] = {0};
   uint8_t crc;
 } ackPacket;
 
@@ -67,7 +68,7 @@ struct SynAckPacket
 {
   char packetType = SYNACK;
   uint8_t seq = 0;
-  byte padding[17] = {0};
+  byte padding[12] = {0};
   uint8_t crc;
 } synAckPacket;
 
@@ -76,7 +77,7 @@ struct ShootPacket
   char packetType = SHOOT;
   uint8_t seq = 0;
   uint8_t hit = 0;
-  byte padding[16] = {0};
+  byte padding[11] = {0};
   uint8_t crc;
 } shootPacket;
 
@@ -90,7 +91,6 @@ struct DataPacket
   int16_t gyrX;
   int16_t gyrY;
   int16_t gyrZ;
-  byte padding[5] = {0};
   uint8_t crc;
 } dataPacket;
 
@@ -218,7 +218,7 @@ void setup()
 
 void loop()
 {
-  if (Serial.available() >= 20 && !isSendingIMU)
+  if (Serial.available() >= PACKET_SIZE && !isSendingIMU)
   {
     handleRxPacket();
   }
@@ -456,7 +456,6 @@ void sendShotDataToServer(bool hitDetected, uint8_t playerHit)
 
 void sendIMUDataToServer(int16_t ax, int16_t ay, int16_t az, int16_t gx, int16_t gy, int16_t gz)
 {
-  // TODO: Implement this function
   dataPacket.seq = mpuSamples;
   dataPacket.accX = ax;
   dataPacket.accY = ay;
@@ -491,7 +490,7 @@ void waitAck(int ms)
 {
   for (int i = 0; i < ms; i++)
   {
-    if (Serial.available() >= 20)
+    if (Serial.available() >= PACKET_SIZE)
     {
       char packetTypeRx = handleRxPacket();
       if (packetTypeRx == ACK || packetTypeRx == SYNACK)
@@ -520,12 +519,12 @@ void handshake(uint8_t seq)
 
 char handleRxPacket()
 {
-  char buffer[20];
-  Serial.readBytes(buffer, 20);
+  char buffer[PACKET_SIZE];
+  Serial.readBytes(buffer, PACKET_SIZE);
 
-  uint8_t crcReceived = buffer[19];
+  uint8_t crcReceived = buffer[PACKET_SIZE - 1];
   crc.reset();
-  crc.add(buffer, 19);
+  crc.add(buffer, PACKET_SIZE - 1);
   if (!(crc.calc() == crcReceived))
   {
     Serial.readString(); // clear the buffer just in case
@@ -552,7 +551,6 @@ char handleRxPacket()
 
       // EEPROM.update(bulletAddr, buffer[4]);
     }
-    // might wanna reset the audio and reload after the audio is played
     break;
 
   case SYN:

@@ -21,6 +21,7 @@
 #define INVALID_PACKET 'X'
 #define NOT_WAITING_FOR_ACK -1
 #define ACK_TIMEOUT 200
+#define PACKET_SIZE 15
 
 // Define global variables
 struct Player
@@ -38,7 +39,7 @@ struct AckPacket
 {
   char packetType = ACK;
   uint8_t seq = 0;
-  byte padding[17] = {0};
+  byte padding[12] = {0};
   uint8_t crc;
 } ackPacket;
 
@@ -46,7 +47,7 @@ struct KickPacket
 {
   char packetType = KICK;
   uint8_t seq = 0;
-  byte padding[17] = {0};
+  byte padding[12] = {0};
   uint8_t crc;
 } kickPacket;
 
@@ -54,7 +55,7 @@ struct SynAckPacket
 {
   char packetType = SYNACK;
   uint8_t seq = 0;
-  byte padding[17] = {0};
+  byte padding[12] = {0};
   uint8_t crc;
 } synAckPacket;
 
@@ -114,7 +115,7 @@ void setup()
 
 void loop()
 {
-  if (Serial.available() >= 20)
+  if (Serial.available() >= PACKET_SIZE)
   {
     handleRxPacket();
   }
@@ -259,7 +260,7 @@ void waitAck(int ms)
 {
   for (int i = 0; i < ms; i++)
   {
-    if (Serial.available() >= 20)
+    if (Serial.available() >= PACKET_SIZE)
     {
       char packetTypeRx = handleRxPacket();
       if (packetTypeRx == SYNACK)
@@ -288,12 +289,12 @@ void handshake(uint8_t seq)
 
 char handleRxPacket()
 {
-  char buffer[20];
-  Serial.readBytes(buffer, 20);
+  char buffer[PACKET_SIZE];
+  Serial.readBytes(buffer, PACKET_SIZE);
 
-  uint8_t crcReceived = buffer[19];
+  uint8_t crcReceived = buffer[PACKET_SIZE - 1];
   crc.reset();
-  crc.add(buffer, 19);
+  crc.add(buffer, PACKET_SIZE - 1);
   if (!(crc.calc() == crcReceived))
   {
     Serial.readString(); // clear the buffer just in case
