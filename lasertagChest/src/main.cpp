@@ -6,7 +6,7 @@
 #include "CRC8.h"
 
 // Define I/O pins
-#define IR_EMIT_PIN 3 // IR emitter pin
+#define IR_EMIT_PIN 4 // IR emitter pin
 #define BUZZER_PIN 5
 
 // Define constants
