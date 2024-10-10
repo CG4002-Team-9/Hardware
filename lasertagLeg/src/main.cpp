@@ -29,6 +29,16 @@ struct Player
   uint8_t address;
 } myPlayer;
 
+struct mpuCalibration
+{
+  int16_t ax_offset;
+  int16_t ay_offset;
+  int16_t az_offset;
+  int16_t gx_offset;
+  int16_t gy_offset;
+  int16_t gz_offset;
+} mpuCal;
+
 typedef struct Sound
 {
   uint16_t note;
@@ -142,6 +152,14 @@ void loadPlayer()
   myPlayer.address = EEPROM.read(PLAYER_ADDRESS_EEPROM);
   // Serial.print(F("Player address loaded from EEPROM: 0x"));
   // Serial.println(myPlayer.address, HEX);
+
+  mpuCal = EEPROM.get(1, mpuCal);
+  mpu.setXAccelOffset(mpuCal.ax_offset);
+  mpu.setYAccelOffset(mpuCal.ay_offset);
+  mpu.setZAccelOffset(mpuCal.az_offset);
+  mpu.setXGyroOffset(mpuCal.gx_offset);
+  mpu.setYGyroOffset(mpuCal.gy_offset);
+  mpu.setZGyroOffset(mpuCal.gz_offset);
 }
 
 // Initialize MPU and interrupt
