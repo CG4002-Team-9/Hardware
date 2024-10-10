@@ -541,8 +541,8 @@ char handleRxPacket()
     if (updatePacketSeq != seqReceived)
     {
       updatePacketSeq = buffer[1];
-      bool isReload = buffer[5];
-      uint8_t newBullets = buffer[4];
+      bool isReload = buffer[6];
+      uint8_t newBullets = buffer[5];
       if (isReload && myPlayer.bullets == 0 && newBullets == 6)
       {
         playSuccessfulReload();
