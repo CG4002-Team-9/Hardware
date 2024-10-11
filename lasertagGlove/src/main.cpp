@@ -18,7 +18,7 @@
 #define MPU_SAMPLING_RATE 40 // in Hz
 #define MOTION_DETECTED_DELAY 1500
 #define IR_SEARCH_TIMEOUT 200
-#define NUM_SAMPLES 60
+#define NUM_SAMPLES 65
 
 // Define packet Types
 #define SYN 'S'
@@ -60,7 +60,7 @@ struct AckPacket
 {
   char packetType = ACK;
   uint8_t seq = 0;
-  byte padding[12] = {0};
+  byte padding[PACKET_SIZE - 3] = {0};
   uint8_t crc;
 } ackPacket;
 
@@ -68,7 +68,7 @@ struct SynAckPacket
 {
   char packetType = SYNACK;
   uint8_t seq = 0;
-  byte padding[12] = {0};
+  byte padding[PACKET_SIZE - 3] = {0};
   uint8_t crc;
 } synAckPacket;
 
@@ -77,7 +77,7 @@ struct ShootPacket
   char packetType = SHOOT;
   uint8_t seq = 0;
   uint8_t hit = 0;
-  byte padding[11] = {0};
+  byte padding[PACKET_SIZE - 4] = {0};
   uint8_t crc;
 } shootPacket;
 
