@@ -191,9 +191,12 @@ void receive_data(char *buffer)
     {
       playPlayerHit(new_hp);
     }
-    else if (new_hp == HP_MAX && myPlayer.hp < HP_MAX)
+    else if (myPlayer.hp < new_hp)
     {
       playPlayerRespawn();
+      if (new_hp < HP_MAX) {
+        playPlayerHit(new_hp);
+      }
     }
   }
 
