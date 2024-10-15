@@ -107,11 +107,11 @@ char handleRxPacket();
 void setup()
 {
   Serial.begin(115200);
-  Serial.write('+');
-  Serial.write('+');
-  Serial.write('+');
-  delay(500);
-  Serial.print("AT+RESTART\r\n");
+  // Serial.write('+');
+  // Serial.write('+');
+  // Serial.write('+');
+  // delay(500);
+  // Serial.print("AT+RESTART\r\n");
 
   // Load player information (address) from EEPROM
   loadPlayer();

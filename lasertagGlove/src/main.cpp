@@ -151,11 +151,11 @@ void handshake(uint8_t seq);
 void setup()
 {
   Serial.begin(115200);
-  Serial.write('+');
-  Serial.write('+');
-  Serial.write('+');
-  delay(500);
-  Serial.print("AT+RESTART\r\n");
+  // Serial.write('+');
+  // Serial.write('+');
+  // Serial.write('+');
+  // delay(500);
+  // Serial.print("AT+RESTART\r\n");
 
   // write to EEPROM the player address
   // EEPROM.write(0, 0x02);             // only do this once, then comment out

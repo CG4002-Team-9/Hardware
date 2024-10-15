@@ -92,11 +92,11 @@ char handleRxPacket();
 void setup()
 {
   Serial.begin(115200);
-  Serial.write('+');
-  Serial.write('+');
-  Serial.write('+');
-  delay(500);
-  Serial.print("AT+RESTART\r\n");
+  // Serial.write('+');
+  // Serial.write('+');
+  // Serial.write('+');
+  // delay(500);
+  // Serial.print("AT+RESTART\r\n");
 
   // Set up the player address from EEPROM
   // EEPROM.write(0, PLAYER_ADDRESS);   // Uncomment once to store the address in EEPROM
@@ -194,7 +194,8 @@ void receive_data(char *buffer)
     else if (myPlayer.hp < new_hp)
     {
       playPlayerRespawn();
-      if (new_hp < HP_MAX) {
+      if (new_hp < HP_MAX)
+      {
         playPlayerHit(new_hp);
       }
     }
