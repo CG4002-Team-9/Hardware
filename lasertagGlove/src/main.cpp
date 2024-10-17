@@ -16,7 +16,7 @@
 // Define constants
 #define DEBOUNCE_DELAY 200
 #define MPU_SAMPLING_RATE 40 // in Hz
-#define MOTION_DETECTED_DELAY 1500
+#define MOTION_DETECTED_DELAY 800
 #define IR_SEARCH_TIMEOUT 200
 #define NUM_SAMPLES 65
 
