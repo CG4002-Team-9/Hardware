@@ -101,10 +101,9 @@ struct AckTracker
 } ackTracker;
 
 ArduinoQueue<Sound> soundQueue(20);
-
 Tone buzzer;
-
 MPU6050 mpu;
+
 const unsigned long SAMPLING_DELAY = 1000 / MPU_SAMPLING_RATE;
 uint8_t mpuSamples = 0;
 
@@ -137,7 +136,7 @@ void playSuccessfulShot();
 void playSuccessfulReload();
 void playShootBullet(uint8_t bullets);
 void playEmptyGun();
-void sendShotDataToServer(bool hitDetected, uint8_t playerHit); // could queue into a buffer which sends in a subroutine
+void sendShotDataToServer(bool hitDetected); // could queue into a buffer which sends in a subroutine
 void sendIMUDataToServer(int16_t ax, int16_t ay, int16_t az, int16_t gx, int16_t gy, int16_t gz);
 void playConnectionEstablished();
 
@@ -262,7 +261,6 @@ void loop()
   {
     IrReceiver.start();
     irStartTime = millis();
-    uint8_t playerHit = 0;
     bool hitDetected = false;
     while (millis() - irStartTime < IR_SEARCH_TIMEOUT)
     {
@@ -272,7 +270,6 @@ void loop()
         if (IrReceiver.decodedIRData.protocol != UNKNOWN && IrReceiver.decodedIRData.address != myPlayer.address)
         {
           hitDetected = true;
-          playerHit = IrReceiver.decodedIRData.address;
           break;
         }
         IrReceiver.resume();
@@ -284,7 +281,7 @@ void loop()
     {
       playSuccessfulShot();
     }
-    sendShotDataToServer(hitDetected, playerHit);
+    sendShotDataToServer(hitDetected);
     isFindingIR = false;
   }
 
@@ -438,7 +435,7 @@ void playConnectionEstablished()
   soundQueue.enqueue(sound);
 }
 
-void sendShotDataToServer(bool hitDetected, uint8_t playerHit)
+void sendShotDataToServer(bool hitDetected)
 {
   // TODO: Implement this function
   shootPacket.seq = ++shootSeq;
