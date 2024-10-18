@@ -12,7 +12,7 @@
 
 // Define constants
 #define PLAYER_ADDRESS_EEPROM 0 // EEPROM address to store/retrieve player address
-#define MPU_SAMPLING_RATE 40 // in Hz
+#define MPU_SAMPLING_RATE 40    // in Hz
 #define MOTION_DETECTED_DELAY 1000
 #define NUM_SAMPLES 45
 #define IMU_THRESHOLD 80
@@ -161,8 +161,8 @@ void setup()
   mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_4);
   mpu.setFullScaleGyroRange(MPU6050_GYRO_FS_500);
 
-  mpu.setDHPFMode(MPU6050_DHPF_5);
-  mpu.setDLPFMode(MPU6050_DLPF_BW_42);
+  mpu.setDHPFMode(MPU6050_DHPF_0P63);
+  mpu.setDLPFMode(MPU6050_DLPF_BW_20);
 
   mpu.setMotionDetectionThreshold(IMU_THRESHOLD);
   mpu.setMotionDetectionDuration(IMU_THRESHOLD_DURATION);
@@ -225,7 +225,6 @@ void motionDetected()
     playMotionDetected();
   }
 }
-
 
 void playMotionDetected()
 {
