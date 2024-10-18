@@ -235,7 +235,7 @@ void loop()
     else
     {
       playEmptyGun();
-      sendShotDataToServer(false, 0);
+      sendShotDataToServer(false);
     }
     isButtonPressed = false;
   }
@@ -277,10 +277,6 @@ void loop()
     }
     IrReceiver.stop();
 
-    if (hitDetected)
-    {
-      playSuccessfulShot();
-    }
     sendShotDataToServer(hitDetected);
     isFindingIR = false;
   }
