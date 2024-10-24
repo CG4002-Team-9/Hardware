@@ -117,7 +117,6 @@ uint8_t shootSeq = 0;
 int bulletAddr = 0;
 bool isHandshaked = false;
 uint8_t updatePacketSeq = 99;
-bool isSendingIMU = false;
 
 // millis variables
 unsigned long lastDebounceTime = 0;
@@ -217,7 +216,7 @@ void setup()
 
 void loop()
 {
-  if (Serial.available() >= PACKET_SIZE && !isSendingIMU)
+  if (Serial.available() >= PACKET_SIZE && !isMotionDetected)
   {
     handleRxPacket();
   }
@@ -288,7 +287,6 @@ void loop()
     int16_t gx, gy, gz;
     mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
-    isSendingIMU = true;
     sendIMUDataToServer(ax, ay, az, gx, gy, gz);
 
     lastSampleTime = millis();
@@ -315,10 +313,16 @@ void motionDetected()
 
 void buttonPressed()
 {
-  if (millis() - lastDebounceTime > DEBOUNCE_DELAY && !isFindingIR && !isButtonPressed && !isMotionDetected)
+  if (millis() - lastDebounceTime > DEBOUNCE_DELAY && !isFindingIR && !isButtonPressed)
   {
     isButtonPressed = true;
     lastDebounceTime = millis();
+  }
+  
+  if (isMotionDetected) {
+    mpuSamples = 0;
+    isMotionDetected = false;
+    lastMotionDetectedTime = millis();
   }
 }
 
@@ -412,7 +416,6 @@ void playMotionEnded()
   sound.duration = 255;
   sound.note = NOTE_A6;
   soundQueue.enqueue(sound);
-  isSendingIMU = false;
 }
 
 void playConnectionEstablished()
