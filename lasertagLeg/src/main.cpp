@@ -18,6 +18,7 @@
 #define IMU_THRESHOLD 80
 #define IMU_THRESHOLD_DURATION 5
 
+// BLE constants
 #define SYN 'S'
 #define SYNACK 'C'
 #define ACK 'A'
@@ -91,7 +92,6 @@ const unsigned long SAMPLING_DELAY = 1000 / MPU_SAMPLING_RATE;
 uint8_t mpuSamples = 0;
 bool isMotionDetected = false;
 
-// BLE variables
 CRC8 crc;
 bool isHandshaked = false;
 bool isSendingIMU = false;
@@ -108,7 +108,6 @@ void playMotionEnded();
 void sendIMUDataToServer(int16_t ax, int16_t ay, int16_t az, int16_t gx, int16_t gy, int16_t gz);
 void playConnectionEstablished();
 
-// BLE Function declarations
 void sendSYNACK();
 char handleRxPacket();
 void waitAck(int ms);
@@ -117,11 +116,6 @@ void handshake(uint8_t seq);
 void setup()
 {
   Serial.begin(115200);
-  // Serial.write('+');
-  // Serial.write('+');
-  // Serial.write('+');
-  // delay(500);
-  // Serial.print("AT+RESTART\r\n");
 
   // write to EEPROM the player address
   // EEPROM.write(0, 0x02);             // only do this once, then comment out
@@ -172,7 +166,6 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(IMU_INTERRUPT_PIN), motionDetected, RISING);
 
   pinMode(BUZZER_PIN, OUTPUT);
-  // Serial.println(F("Setup complete"));
 }
 
 void loop()
@@ -215,8 +208,7 @@ void loop()
   }
 }
 
-// put function definitions here:
-
+// function definitions
 void motionDetected()
 {
   if (!isMotionDetected && millis() - lastMotionDetectedTime > MOTION_DETECTED_DELAY)
@@ -263,6 +255,7 @@ void playConnectionEstablished()
 
 void sendIMUDataToServer(int16_t ax, int16_t ay, int16_t az, int16_t gx, int16_t gy, int16_t gz)
 {
+  // sends imu data to server
   dataPacket.seq = mpuSamples;
   dataPacket.accX = ax;
   dataPacket.accY = ay;
@@ -278,6 +271,7 @@ void sendIMUDataToServer(int16_t ax, int16_t ay, int16_t az, int16_t gx, int16_t
 
 void sendSYNACK()
 {
+  // send SYNACK packet to server
   crc.reset();
   crc.add((byte *)&synAckPacket, sizeof(synAckPacket) - 1);
   synAckPacket.crc = crc.calc();
@@ -286,6 +280,7 @@ void sendSYNACK()
 
 void waitAck(int ms)
 {
+  // wait for ACK packet from server
   for (int i = 0; i < ms; i++)
   {
     if (Serial.available() >= PACKET_SIZE)
@@ -302,6 +297,7 @@ void waitAck(int ms)
 
 void handshake(uint8_t seq)
 {
+  // handshake with server
   isHandshaked = false;
   playConnectionEstablished();
   sendSYNACK();
@@ -316,6 +312,7 @@ void handshake(uint8_t seq)
 
 char handleRxPacket()
 {
+  // handle packets received from server
   char buffer[PACKET_SIZE];
   Serial.readBytes(buffer, PACKET_SIZE);
 

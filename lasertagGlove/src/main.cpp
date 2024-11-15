@@ -20,7 +20,7 @@
 #define IR_SEARCH_TIMEOUT 200
 #define NUM_SAMPLES 65
 
-// Define packet Types
+// BLE constants
 #define SYN 'S'
 #define SYNACK 'C'
 #define ACK 'A'
@@ -33,7 +33,6 @@
 #define PACKET_SIZE 15
 
 // Define global variables
-
 struct Player
 {
   uint8_t address;
@@ -111,7 +110,6 @@ bool isButtonPressed = false;
 bool isMotionDetected = false;
 bool isFindingIR = false;
 
-// BLE variables
 CRC8 crc;
 uint8_t shootSeq = 0;
 int bulletAddr = 0;
@@ -126,7 +124,7 @@ unsigned long lastSampleTime = 0;
 unsigned long lastMotionDetectedTime = 0;
 unsigned long irStartTime = 0;
 
-// put function declarations here:
+// function declarations
 void motionDetected();
 void buttonPressed();
 void playMotionDetected();
@@ -135,11 +133,10 @@ void playSuccessfulShot();
 void playSuccessfulReload();
 void playShootBullet(uint8_t bullets);
 void playEmptyGun();
-void sendShotDataToServer(bool hitDetected); // could queue into a buffer which sends in a subroutine
+void sendShotDataToServer(bool hitDetected);
 void sendIMUDataToServer(int16_t ax, int16_t ay, int16_t az, int16_t gx, int16_t gy, int16_t gz);
 void playConnectionEstablished();
 
-// BLE Function declarations
 void sendACK(uint8_t seq);
 void sendSYNACK();
 char handleRxPacket();
@@ -149,11 +146,6 @@ void handshake(uint8_t seq);
 void setup()
 {
   Serial.begin(115200);
-  // Serial.write('+');
-  // Serial.write('+');
-  // Serial.write('+');
-  // delay(500);
-  // Serial.print("AT+RESTART\r\n");
 
   // write to EEPROM the player address
   // EEPROM.write(0, 0x02);             // only do this once, then comment out
@@ -300,8 +292,7 @@ void loop()
   }
 }
 
-// put function definitions here:
-
+// function definitions
 void motionDetected()
 {
   if (!isMotionDetected && millis() - lastMotionDetectedTime > MOTION_DETECTED_DELAY)
@@ -328,7 +319,7 @@ void buttonPressed()
 
 void playSuccessfulShot()
 {
-  // play two ascending sounds
+  // play a sound to indicate successful shot
   Sound sound;
   sound.note = 0;
   sound.duration = 100;
@@ -342,7 +333,7 @@ void playSuccessfulShot()
 
 void playSuccessfulReload()
 {
-  // play four ascending sounds
+  // play a sound to indicate successful reload
   Sound sound;
   sound.duration = 50;
   sound.note = NOTE_C6;
@@ -389,7 +380,7 @@ void playShootBullet(uint8_t bullets)
 
 void playEmptyGun()
 {
-  // play three descending low sounds
+  // play a sound to indicate empty gun
   Sound sound;
   sound.duration = 50;
   sound.note = NOTE_A3;
@@ -436,7 +427,7 @@ void playConnectionEstablished()
 
 void sendShotDataToServer(bool hitDetected)
 {
-  // TODO: Implement this function
+  // sends gun action to server
   shootPacket.seq = ++shootSeq;
   shootPacket.hit = uint8_t(hitDetected);
   crc.reset();
@@ -452,6 +443,7 @@ void sendShotDataToServer(bool hitDetected)
 
 void sendIMUDataToServer(int16_t ax, int16_t ay, int16_t az, int16_t gx, int16_t gy, int16_t gz)
 {
+  // sends imu data to server
   dataPacket.seq = mpuSamples;
   dataPacket.accX = ax;
   dataPacket.accY = ay;
@@ -467,6 +459,7 @@ void sendIMUDataToServer(int16_t ax, int16_t ay, int16_t az, int16_t gx, int16_t
 
 void sendACK(uint8_t seq)
 {
+  // send ACK packet to server
   ackPacket.seq = seq;
   crc.reset();
   crc.add((byte *)&ackPacket, sizeof(ackPacket) - 1);
@@ -476,6 +469,7 @@ void sendACK(uint8_t seq)
 
 void sendSYNACK()
 {
+  // send SYNACK packet to server
   crc.reset();
   crc.add((byte *)&synAckPacket, sizeof(synAckPacket) - 1);
   synAckPacket.crc = crc.calc();
@@ -484,6 +478,7 @@ void sendSYNACK()
 
 void waitAck(int ms)
 {
+  // wait for ACK packet from server
   for (int i = 0; i < ms; i++)
   {
     if (Serial.available() >= PACKET_SIZE)
@@ -500,6 +495,7 @@ void waitAck(int ms)
 
 void handshake(uint8_t seq)
 {
+  // handshake with server
   isHandshaked = false;
   playConnectionEstablished();
   sendSYNACK();
@@ -515,6 +511,7 @@ void handshake(uint8_t seq)
 
 char handleRxPacket()
 {
+  // handle packets received from server
   char buffer[PACKET_SIZE];
   Serial.readBytes(buffer, PACKET_SIZE);
 

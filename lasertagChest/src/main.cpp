@@ -16,7 +16,7 @@
 #define SHIELD_HP_MAX 30     // Maximum Shield HP
 #define NOTE_DELAY_DEFAULT 0 // Default note delay
 
-// BLE
+// BLE Constants
 #define SYN 'S'
 #define SYNACK 'C'
 #define ACK 'A'
@@ -68,7 +68,6 @@ unsigned long lastIRSendTime = 0;
 unsigned long lastSoundTime = 0;
 uint16_t NOTE_DELAY = NOTE_DELAY_DEFAULT;
 
-// BLE
 CRC8 crc;
 bool isHandshaked = false;
 uint8_t updatePacketSeq = 99;
@@ -80,7 +79,7 @@ void playShieldDestroyed();
 void playPlayerHit(uint8_t new_hp);
 void setupIR();
 void sendIRData();
-void receive_data(); // Placeholder for external data updates
+void receive_data();
 void playSoundsFromQueue();
 void playConnectionEstablished();
 
@@ -92,11 +91,6 @@ char handleRxPacket();
 void setup()
 {
   Serial.begin(115200);
-  // Serial.write('+');
-  // Serial.write('+');
-  // Serial.write('+');
-  // delay(500);
-  // Serial.print("AT+RESTART\r\n");
 
   // Set up the player address from EEPROM
   // EEPROM.write(0, PLAYER_ADDRESS);   // Uncomment once to store the address in EEPROM
@@ -106,7 +100,6 @@ void setup()
 
   // Initialize the IR emitter
   setupIR();
-  // Serial.println(F("Vest setup complete"));
 }
 
 void loop()
@@ -124,7 +117,6 @@ void loop()
     handleRxPacket();
   }
 
-  // Play sounds from the queue
   playSoundsFromQueue();
 }
 
@@ -143,9 +135,9 @@ void sendIRData()
   // Serial.println(myPlayer.address, HEX);
 }
 
-// Queue-based sound playing
 void playSoundsFromQueue()
 {
+  // Play sounds from the queue
   if (millis() - lastSoundTime > NOTE_DELAY)
   {
     if (soundQueue.itemCount() > 0)
@@ -158,10 +150,9 @@ void playSoundsFromQueue()
   }
 }
 
-// TODO: Implement external data updates (e.g., from Bluetooth or server)
 void receive_data(char *buffer)
 {
-  // Placeholder function to update HP and Shield HP externally
+  // Update the player HP and Shield HP based on the received data
   updatePacketSeq = buffer[1];
   uint8_t new_hp = buffer[2];
   uint8_t new_shield_hp = buffer[3];
@@ -207,17 +198,17 @@ void receive_data(char *buffer)
 
 void playPlayerRespawn()
 {
-  // Include death sound first (low-pitched within acceptable octave), then respawn sound
+  // play respawn sound
   Sound sound;
 
-  // Death sound
+  // death sound
   sound.duration = 200;
-  sound.note = NOTE_G2; // Adjusted to octave 3
+  sound.note = NOTE_G2;
   soundQueue.enqueue(sound);
   soundQueue.enqueue(sound);
   soundQueue.enqueue(sound);
 
-  // Respawn sound (uplifting arpeggio)
+  // respawn sound
   sound.duration = 100;
   sound.note = NOTE_C4;
   soundQueue.enqueue(sound);
@@ -229,7 +220,7 @@ void playPlayerRespawn()
 
 void playShieldRecharged()
 {
-  // Arpeggio style sound to indicate shield recharge
+  // play shield recharge sound
   Sound sound;
   sound.duration = 70;
   uint16_t notes[] = {NOTE_C5, NOTE_E5, NOTE_G5, NOTE_C6};
@@ -243,7 +234,7 @@ void playShieldRecharged()
 
 void playShieldHit(uint8_t new_shield_hp)
 {
-  // Unique ascending sounds for each shield HP interval, using sharps
+  // play shield hit sound based on the new shield HP
   Sound sound;
   sound.duration = 70;
 
@@ -296,9 +287,9 @@ void playShieldHit(uint8_t new_shield_hp)
 
 void playShieldDestroyed()
 {
-  // Unique descending scale to indicate shield break with shorter durations
+  // play shield destroyed sound
   Sound sound;
-  sound.duration = 60; // Shortened duration
+  sound.duration = 60;
   uint16_t notes[] = {NOTE_G5, NOTE_FS5, NOTE_F5, NOTE_E5, NOTE_DS5, NOTE_D5, NOTE_CS5, NOTE_C5};
 
   for (int i = 0; i < 8; i++)
@@ -310,7 +301,7 @@ void playShieldDestroyed()
 
 void playPlayerHit(uint8_t new_hp)
 {
-  // Unique descending sounds for each HP interval, staying within octaves 3 to 5
+  // play player hit sound based on the new HP
   Sound sound;
   sound.duration = 100;
 
@@ -415,7 +406,7 @@ void playPlayerHit(uint8_t new_hp)
   case 15:
     sound.note = NOTE_C3;
     soundQueue.enqueue(sound);
-    sound.note = NOTE_B3; // Reusing B3 to stay above octave 3
+    sound.note = NOTE_B3;
     soundQueue.enqueue(sound);
     break;
   case 10:
@@ -453,6 +444,7 @@ void playConnectionEstablished()
 
 void sendACK(uint8_t seq)
 {
+  // send ACK packet to server
   ackPacket.seq = seq;
   crc.reset();
   crc.add((byte *)&ackPacket, sizeof(ackPacket) - 1);
@@ -462,6 +454,7 @@ void sendACK(uint8_t seq)
 
 void sendSYNACK()
 {
+  // send SYNACK packet to server
   crc.reset();
   crc.add((byte *)&synAckPacket, sizeof(synAckPacket) - 1);
   synAckPacket.crc = crc.calc();
@@ -470,6 +463,7 @@ void sendSYNACK()
 
 void waitAck(int ms)
 {
+  // wait for ACK packet from server
   for (int i = 0; i < ms; i++)
   {
     if (Serial.available() >= PACKET_SIZE)
@@ -486,6 +480,7 @@ void waitAck(int ms)
 
 void handshake(uint8_t seq)
 {
+  // handshake with server
   isHandshaked = false;
   playConnectionEstablished();
   sendSYNACK();
@@ -500,6 +495,7 @@ void handshake(uint8_t seq)
 
 char handleRxPacket()
 {
+  // handle received packet from server
   char buffer[PACKET_SIZE];
   Serial.readBytes(buffer, PACKET_SIZE);
   uint8_t crcReceived = buffer[PACKET_SIZE - 1];
